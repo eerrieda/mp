@@ -105,45 +105,75 @@
         // 하드코딩된 관리자 비밀번호
         const ADMIN_PASSWORD = 'admin123';
 
+        // 이미지 목록을 localStorage에서 불러오기
+        function loadImages() {
+            const images = JSON.parse(localStorage.getItem('images')) || [];
+            images.forEach(imgData => {
+                displayImage(imgData.src, imgData.name);
+            });
+        }
+
+        // 이미지 표시 함수
+        function displayImage(src, name) {
+            const imgContainer = document.createElement('div');
+            imgContainer.classList.add('image-item');
+
+            // 이미지 생성
+            const img = document.createElement('img');
+            img.src = src;
+            imgContainer.appendChild(img);
+
+            // 다운로드 링크 생성
+            const downloadLink = document.createElement('a');
+            downloadLink.href = src;
+            downloadLink.download = name;
+            downloadLink.classList.add('download-link');
+            downloadLink.textContent = '다운로드';
+            imgContainer.appendChild(downloadLink);
+
+            // 삭제 버튼 (관리자일 때만 보임)
+            if (isAdmin) {
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '삭제';
+                deleteButton.classList.add('delete-button');
+
+                deleteButton.addEventListener('click', () => {
+                    imgContainer.remove();  // 이미지 삭제 후 화면에서 제거
+                    removeImageFromStorage(src);
+                });
+
+                imgContainer.appendChild(deleteButton);
+            }
+
+            imageGrid.appendChild(imgContainer);
+        }
+
+        // 이미지 삭제 후 localStorage에서도 제거
+        function removeImageFromStorage(src) {
+            const images = JSON.parse(localStorage.getItem('images')) || [];
+            const updatedImages = images.filter(img => img.src !== src);
+            localStorage.setItem('images', JSON.stringify(updatedImages));
+        }
+
+        // 이미지 업로드 처리
         imageInput.addEventListener('change', function(event) {
             const files = event.target.files;
-            imageGrid.innerHTML = '';  // 기존 이미지 초기화
+            const images = JSON.parse(localStorage.getItem('images')) || [];
 
             Array.from(files).forEach(file => {
                 if (file && file.type.startsWith('image/')) {
                     const reader = new FileReader();
 
                     reader.onload = function(e) {
-                        const imgContainer = document.createElement('div');
-                        imgContainer.classList.add('image-item');
+                        const imgData = {
+                            src: e.target.result,
+                            name: file.name
+                        };
 
-                        // 이미지 생성
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        imgContainer.appendChild(img);
-
-                        // 다운로드 링크 생성
-                        const downloadLink = document.createElement('a');
-                        downloadLink.href = e.target.result;
-                        downloadLink.download = file.name;
-                        downloadLink.classList.add('download-link');
-                        downloadLink.textContent = '다운로드';
-                        imgContainer.appendChild(downloadLink);
-
-                        // 삭제 버튼 (관리자일 때만 보임)
-                        if (isAdmin) {
-                            const deleteButton = document.createElement('button');
-                            deleteButton.textContent = '삭제';
-                            deleteButton.classList.add('delete-button');
-
-                            deleteButton.addEventListener('click', () => {
-                                imgContainer.remove();  // 이미지 삭제 후 화면에서 제거
-                            });
-
-                            imgContainer.appendChild(deleteButton);
-                        }
-
-                        imageGrid.appendChild(imgContainer);
+                        // 이미지 목록에 추가하고 localStorage에 저장
+                        images.push(imgData);
+                        localStorage.setItem('images', JSON.stringify(images));
+                        displayImage(imgData.src, imgData.name);
                     };
 
                     reader.readAsDataURL(file);
@@ -151,12 +181,13 @@
             });
         });
 
+        // 관리자 로그인 확인
         function verifyAdmin() {
             const password = adminPasswordInput.value;
             if (password === ADMIN_PASSWORD) {
                 isAdmin = true;
                 alert('관리자로 로그인 되었습니다.');
-                // 이미지 삭제 버튼을 모든 이미지에 추가
+                // 기존 이미지에 삭제 버튼 추가
                 document.querySelectorAll('.image-item').forEach(item => {
                     if (!item.querySelector('.delete-button')) {
                         const deleteButton = document.createElement('button');
@@ -164,6 +195,7 @@
                         deleteButton.classList.add('delete-button');
                         deleteButton.addEventListener('click', () => {
                             item.remove();  // 이미지 삭제 후 화면에서 제거
+                            removeImageFromStorage(item.querySelector('img').src);
                         });
                         item.appendChild(deleteButton);
                     }
@@ -172,6 +204,9 @@
                 alert('비밀번호가 올바르지 않습니다.');
             }
         }
+
+        // 페이지 로드 시 이미지를 불러오기
+        window.onload = loadImages;
     </script>
 
 </body>
