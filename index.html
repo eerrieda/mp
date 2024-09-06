@@ -84,7 +84,6 @@
 
         imageInput.addEventListener('change', function(event) {
             const files = event.target.files;
-            imageGrid.innerHTML = '';  // 기존 이미지 초기화
 
             Array.from(files).forEach(file => {
                 if (file && file.type.startsWith('image/')) {
@@ -126,6 +125,8 @@
                                     .then(result => {
                                         alert(result);
                                         imgContainer.remove();  // 이미지 삭제 후 화면에서 제거
+                                        // 업로드된 이미지 배열에서 제거
+                                        uploadedImages = uploadedImages.filter(image => image !== e.target.result);
                                     })
                                     .catch(error => console.error('Error:', error));
                                 }
@@ -146,6 +147,63 @@
                 }
             });
         });
+
+        // 페이지 새로고침 시 업로드된 이미지를 계속 표시하기 위한 함수
+        function renderUploadedImages() {
+            uploadedImages.forEach(imageUrl => {
+                const imgContainer = document.createElement('div');
+                imgContainer.classList.add('image-item');
+
+                // 이미지 생성
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                imgContainer.appendChild(img);
+
+                // 다운로드 링크 생성
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imageUrl;
+                downloadLink.download = 'download';
+                downloadLink.classList.add('download-link');
+                downloadLink.textContent = '다운로드';
+                imgContainer.appendChild(downloadLink);
+
+                // 삭제 버튼 생성
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = '삭제';
+                deleteButton.classList.add('delete-button');
+
+                deleteButton.addEventListener('click', () => {
+                    const password = prompt('관리자 비밀번호를 입력하세요:');
+                    if (password === hardcodedPassword) {
+                        if (confirm('정말로 이 이미지를 삭제하시겠습니까?')) {
+                            // 이미지 삭제 요청
+                            fetch('/delete-image', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ imageUrl: imageUrl })
+                            })
+                            .then(response => response.text())
+                            .then(result => {
+                                alert(result);
+                                imgContainer.remove();  // 이미지 삭제 후 화면에서 제거
+                                // 업로드된 이미지 배열에서 제거
+                                uploadedImages = uploadedImages.filter(img => img !== imageUrl);
+                            })
+                            .catch(error => console.error('Error:', error));
+                        }
+                    } else {
+                        alert('비밀번호가 올바르지 않습니다.');
+                    }
+                });
+
+                imgContainer.appendChild(deleteButton);
+
+                imageGrid.appendChild(imgContainer);
+            });
+        }
+
+        // 페이지 로드 시 업로드된 이미지를 계속 표시
+        window.addEventListener('load', renderUploadedImages);
     </script>
 
 </body>
