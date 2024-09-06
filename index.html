@@ -69,6 +69,7 @@
             padding: 15px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
+            display: none; /* 로그인 상태에 따라 표시/숨김 */
         }
 
         .admin-login input {
@@ -90,7 +91,7 @@
         <div id="imageGrid"></div>
     </div>
 
-    <div class="admin-login">
+    <div class="admin-login" id="adminLogin">
         <h2>관리자 로그인</h2>
         <input type="password" id="adminPassword" placeholder="관리자 비밀번호">
         <button onclick="verifyAdmin()">관리자 로그인</button>
@@ -100,6 +101,7 @@
         const imageInput = document.getElementById('imageInput');
         const imageGrid = document.getElementById('imageGrid');
         const adminPasswordInput = document.getElementById('adminPassword');
+        const adminLogin = document.getElementById('adminLogin');
         let isAdmin = false;
 
         // 하드코딩된 관리자 비밀번호
@@ -186,6 +188,7 @@
             const password = adminPasswordInput.value;
             if (password === ADMIN_PASSWORD) {
                 isAdmin = true;
+                adminLogin.style.display = 'none'; // 관리자 로그인 창 숨기기
                 alert('관리자로 로그인 되었습니다.');
                 // 기존 이미지에 삭제 버튼 추가
                 document.querySelectorAll('.image-item').forEach(item => {
