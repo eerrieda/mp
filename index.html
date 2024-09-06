@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사진 업로드 및 삭제</title>
+    <title>사진 업로드</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin: 0;
-            padding: 0;
         }
 
         .upload-container {
@@ -20,12 +18,6 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
-        }
-
-        input[type="file"], input[type="password"] {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
         }
 
         .image-item {
@@ -39,9 +31,7 @@
         }
 
         .delete-button {
-            position: absolute;
-            bottom: 5px;
-            right: 5px;
+            margin-top: 5px;
             background-color: red;
             color: white;
             border: none;
@@ -60,156 +50,102 @@
             text-decoration: underline;
         }
 
-        .admin-login {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 15px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            display: none; /* 로그인 상태에 따라 표시/숨김 */
-        }
-
-        .admin-login input {
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .admin-login button {
+        input[type="file"] {
             margin-top: 10px;
-            width: 100%;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        pre {
+            text-align: left;
+            margin: 20px auto;
+            max-width: 80%;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
 
     <div class="upload-container">
-        <h1>사진 업로드 및 삭제</h1>
+        <h1>사진 업로드</h1>
         <input type="file" id="imageInput" accept="image/*" multiple>
         <div id="imageGrid"></div>
-    </div>
-
-    <div class="admin-login" id="adminLogin">
-        <h2>관리자 로그인</h2>
-        <input type="password" id="adminPassword" placeholder="관리자 비밀번호">
-        <button onclick="verifyAdmin()">관리자 로그인</button>
     </div>
 
     <script>
         const imageInput = document.getElementById('imageInput');
         const imageGrid = document.getElementById('imageGrid');
-        const adminPasswordInput = document.getElementById('adminPassword');
-        const adminLogin = document.getElementById('adminLogin');
-        let isAdmin = false;
 
         // 하드코딩된 관리자 비밀번호
-        const ADMIN_PASSWORD = 'admin123';
+        const hardcodedPassword = 'admin123'; 
 
-        // 이미지 목록을 localStorage에서 불러오기
-        function loadImages() {
-            const images = JSON.parse(localStorage.getItem('images')) || [];
-            images.forEach(imgData => {
-                displayImage(imgData.src, imgData.name);
-            });
-        }
+        // 업로드된 이미지를 관리하기 위한 배열
+        let uploadedImages = [];
 
-        // 이미지 표시 함수
-        function displayImage(src, name) {
-            const imgContainer = document.createElement('div');
-            imgContainer.classList.add('image-item');
-
-            // 이미지 생성
-            const img = document.createElement('img');
-            img.src = src;
-            imgContainer.appendChild(img);
-
-            // 다운로드 링크 생성
-            const downloadLink = document.createElement('a');
-            downloadLink.href = src;
-            downloadLink.download = name;
-            downloadLink.classList.add('download-link');
-            downloadLink.textContent = '다운로드';
-            imgContainer.appendChild(downloadLink);
-
-            // 삭제 버튼 (관리자일 때만 보임)
-            if (isAdmin) {
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = '삭제';
-                deleteButton.classList.add('delete-button');
-
-                deleteButton.addEventListener('click', () => {
-                    imgContainer.remove();  // 이미지 삭제 후 화면에서 제거
-                    removeImageFromStorage(src);
-                });
-
-                imgContainer.appendChild(deleteButton);
-            }
-
-            imageGrid.appendChild(imgContainer);
-        }
-
-        // 이미지 삭제 후 localStorage에서도 제거
-        function removeImageFromStorage(src) {
-            const images = JSON.parse(localStorage.getItem('images')) || [];
-            const updatedImages = images.filter(img => img.src !== src);
-            localStorage.setItem('images', JSON.stringify(updatedImages));
-        }
-
-        // 이미지 업로드 처리
         imageInput.addEventListener('change', function(event) {
             const files = event.target.files;
-            const images = JSON.parse(localStorage.getItem('images')) || [];
+            imageGrid.innerHTML = '';  // 기존 이미지 초기화
 
             Array.from(files).forEach(file => {
                 if (file && file.type.startsWith('image/')) {
                     const reader = new FileReader();
 
                     reader.onload = function(e) {
-                        const imgData = {
-                            src: e.target.result,
-                            name: file.name
-                        };
+                        const imgContainer = document.createElement('div');
+                        imgContainer.classList.add('image-item');
 
-                        // 이미지 목록에 추가하고 localStorage에 저장
-                        images.push(imgData);
-                        localStorage.setItem('images', JSON.stringify(images));
-                        displayImage(imgData.src, imgData.name);
+                        // 이미지 생성
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        imgContainer.appendChild(img);
+
+                        // 다운로드 링크 생성
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = e.target.result;
+                        downloadLink.download = file.name;
+                        downloadLink.classList.add('download-link');
+                        downloadLink.textContent = '다운로드';
+                        imgContainer.appendChild(downloadLink);
+
+                        // 삭제 버튼 생성
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = '삭제';
+                        deleteButton.classList.add('delete-button');
+                        
+                        deleteButton.addEventListener('click', () => {
+                            const password = prompt('관리자 비밀번호를 입력하세요:');
+                            if (password === hardcodedPassword) {
+                                if (confirm('정말로 이 이미지를 삭제하시겠습니까?')) {
+                                    // 이미지 삭제 요청
+                                    fetch('/delete-image', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ imageUrl: e.target.result })
+                                    })
+                                    .then(response => response.text())
+                                    .then(result => {
+                                        alert(result);
+                                        imgContainer.remove();  // 이미지 삭제 후 화면에서 제거
+                                    })
+                                    .catch(error => console.error('Error:', error));
+                                }
+                            } else {
+                                alert('비밀번호가 올바르지 않습니다.');
+                            }
+                        });
+
+                        imgContainer.appendChild(deleteButton);
+
+                        imageGrid.appendChild(imgContainer);
+
+                        // 업로드된 이미지 배열에 추가
+                        uploadedImages.push(e.target.result);
                     };
 
                     reader.readAsDataURL(file);
                 }
             });
         });
-
-        // 관리자 로그인 확인
-        function verifyAdmin() {
-            const password = adminPasswordInput.value;
-            if (password === ADMIN_PASSWORD) {
-                isAdmin = true;
-                adminLogin.style.display = 'none'; // 관리자 로그인 창 숨기기
-                alert('관리자로 로그인 되었습니다.');
-                // 기존 이미지에 삭제 버튼 추가
-                document.querySelectorAll('.image-item').forEach(item => {
-                    if (!item.querySelector('.delete-button')) {
-                        const deleteButton = document.createElement('button');
-                        deleteButton.textContent = '삭제';
-                        deleteButton.classList.add('delete-button');
-                        deleteButton.addEventListener('click', () => {
-                            item.remove();  // 이미지 삭제 후 화면에서 제거
-                            removeImageFromStorage(item.querySelector('img').src);
-                        });
-                        item.appendChild(deleteButton);
-                    }
-                });
-            } else {
-                alert('비밀번호가 올바르지 않습니다.');
-            }
-        }
-
-        // 페이지 로드 시 이미지를 불러오기
-        window.onload = loadImages;
     </script>
 
 </body>
